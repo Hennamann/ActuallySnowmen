@@ -12,6 +12,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CarvedPumpkinBlock;
+import net.minecraft.world.level.block.PowderSnowBlock;
 import net.minecraft.world.level.block.state.pattern.BlockInWorld;
 import net.minecraft.world.level.block.state.pattern.BlockPattern;
 import net.minecraft.world.level.block.state.pattern.BlockPatternBuilder;
@@ -27,21 +29,25 @@ import net.minecraftforge.fml.config.ModConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static net.minecraft.world.level.block.CarvedPumpkinBlock.PUMPKINS_PREDICATE;
+
 @Mod("actuallysnowmen")
 public class ActuallySnowmen
 {
     private static final Logger LOGGER = LogManager.getLogger();
-    private BlockPattern pureSnowGolemBase;
+    private BlockPattern pureSnowGolemFull;
+    private BlockPattern purePowderedSnowGolemFull;
+    private BlockPattern powderedSnowGolemFull;
     private final TextComponent componentTextSnowMan = new TextComponent("Snowman");
 
     public ActuallySnowmen() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Configuration.CONFIG_SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.CONFIG_SPEC);
         MinecraftForge.EVENT_BUS.register(this);
     }
 
     @SubscribeEvent
     public void onSnowGolemDeath(LivingDeathEvent event) {
-        if (Configuration.shouldSnowGolemsDropPumpkin()) {
+        if (Config.shouldSnowGolemsDropPumpkin()) {
             if (event.getEntity() instanceof SnowGolem) {
                 if (((SnowGolem) event.getEntity()).hasPumpkin()) {
                     event.getEntity().getCommandSenderWorld().addFreshEntity(new ItemEntity(event.getEntity().getCommandSenderWorld(), event.getEntity().xo, event.getEntity().yo, event.getEntity().zo, new ItemStack(Items.CARVED_PUMPKIN, 1)));
@@ -52,7 +58,7 @@ public class ActuallySnowmen
 
     @SubscribeEvent
     public void onPlayerRightClickSnowGolem(PlayerInteractEvent.EntityInteract event) {
-        if (Configuration.canAddPumpkinToSnowGolem()) {
+        if (Config.canAddPumpkinToSnowGolem()) {
             if (event.getTarget() instanceof SnowGolem) {
                 if (event.getPlayer().getMainHandItem().getItem() == Items.CARVED_PUMPKIN || event.getPlayer().getMainHandItem().getItem() == Items.JACK_O_LANTERN) {
                     if (!((SnowGolem) event.getTarget()).hasPumpkin()) {
@@ -65,7 +71,7 @@ public class ActuallySnowmen
                             event.getTarget().setCustomNameVisible(false);
                         }
                     }
-                } else if (Configuration.shouldSnowGolemWithoutPumpkinBeSnowman()) {
+                } else if (Config.shouldSnowGolemWithoutPumpkinBeSnowman()) {
                     if (event.getPlayer().getMainHandItem().getItem() == Items.SHEARS) {
                         if (event.getTarget().getCustomName() == componentTextSnowMan || event.getTarget().getCustomName() == null) {
                             if (((SnowGolem) event.getTarget()).hasPumpkin()) {
@@ -83,21 +89,23 @@ public class ActuallySnowmen
     public void onSnowGolemCreation(BlockEvent.EntityPlaceEvent event) {
         Level level = event.getEntity().getCommandSenderWorld();
         BlockPos pos = event.getPos();
-        BlockPattern.BlockPatternMatch snowGolemPattern = this.getOrCreatePureSnowGolem().find(level, pos);
+        SnowGolem snowGolem = EntityType.SNOW_GOLEM.create(level);
+        BlockPattern.BlockPatternMatch pureSnowGolemPattern = this.getOrCreatePureSnowGolemFull().find(level, pos);
+        BlockPattern.BlockPatternMatch purePowderedSnowGolemPattern = this.getOrCreatePurePowderedSnowGolemFull().find(level, pos);
+        BlockPattern.BlockPatternMatch powderedSnowGolemPattern = this.getOrCreatePowderedSnowGolemFull().find(level, pos);
 
         if (event.getPlacedBlock() == Blocks.SNOW_BLOCK.defaultBlockState()) {
-            if (snowGolemPattern != null) {
-                for (int i = 0; i < this.getOrCreatePureSnowGolem().getHeight(); ++i) {
-                    BlockInWorld blockinworld = snowGolemPattern.getBlock(0, i, 0);
+            if (pureSnowGolemPattern != null) {
+                for (int i = 0; i < this.getOrCreatePureSnowGolemFull().getHeight(); ++i) {
+                    BlockInWorld blockinworld = pureSnowGolemPattern.getBlock(0, i, 0);
                     level.setBlock(blockinworld.getPos(), Blocks.AIR.defaultBlockState(), 2);
                     level.levelEvent(2001, blockinworld.getPos(), Block.getId(blockinworld.getState()));
                 }
 
-                SnowGolem snowGolem = EntityType.SNOW_GOLEM.create(level);
-                BlockPos blockPos = snowGolemPattern.getBlock(0, 2, 0).getPos();
-                snowGolem.moveTo((double) blockPos.getX() + 0.5D, (double) blockPos.getY() + 0.05D, (double) blockPos.getZ() + 0.5D, 0.0F, 0.0F);
+                BlockPos patternPos = pureSnowGolemPattern.getBlock(0, 2, 0).getPos();
+                snowGolem.moveTo((double) patternPos.getX() + 0.5D, (double) patternPos.getY() + 0.05D, (double) patternPos.getZ() + 0.5D, 0.0F, 0.0F);
                 snowGolem.setPumpkin(false);
-                if (Configuration.shouldSnowGolemWithoutPumpkinBeSnowman()) {
+                if (Config.shouldSnowGolemWithoutPumpkinBeSnowman()) {
                     snowGolem.setCustomName(componentTextSnowMan);
                 }
                 level.addFreshEntity(snowGolem);
@@ -106,18 +114,78 @@ public class ActuallySnowmen
                     CriteriaTriggers.SUMMONED_ENTITY.trigger(serverPlayer, snowGolem);
                 }
 
-                for (int l = 0; l < this.getOrCreatePureSnowGolem().getHeight(); ++l) {
-                    BlockInWorld blockInWorld = snowGolemPattern.getBlock(0, l, 0);
+                for (int l = 0; l < this.getOrCreatePureSnowGolemFull().getHeight(); ++l) {
+                    BlockInWorld blockInWorld = pureSnowGolemPattern.getBlock(0, l, 0);
+                    level.blockUpdated(blockInWorld.getPos(), Blocks.AIR);
+                }
+            }
+        } else if (event.getPlacedBlock().getBlock() instanceof PowderSnowBlock && Config.canMakeSnowGolemFromPowderedSnow()) {
+            if (purePowderedSnowGolemPattern != null) {
+                for (int i = 0; i < this.getOrCreatePurePowderedSnowGolemFull().getHeight(); ++i) {
+                    BlockInWorld blockinworld = purePowderedSnowGolemPattern.getBlock(0, i, 0);
+                    level.setBlock(blockinworld.getPos(), Blocks.AIR.defaultBlockState(), 2);
+                    level.levelEvent(2001, blockinworld.getPos(), Block.getId(blockinworld.getState()));
+                }
+
+                BlockPos patternPos = purePowderedSnowGolemPattern.getBlock(0, 2, 0).getPos();
+                snowGolem.moveTo((double) patternPos.getX() + 0.5D, (double) patternPos.getY() + 0.05D, (double) patternPos.getZ() + 0.5D, 0.0F, 0.0F);
+                snowGolem.setPumpkin(false);
+                if (Config.shouldSnowGolemWithoutPumpkinBeSnowman()) {
+                    snowGolem.setCustomName(componentTextSnowMan);
+                }
+                level.addFreshEntity(snowGolem);
+
+                for (ServerPlayer serverPlayer : level.getEntitiesOfClass(ServerPlayer.class, snowGolem.getBoundingBox().inflate(5.0D))) {
+                    CriteriaTriggers.SUMMONED_ENTITY.trigger(serverPlayer, snowGolem);
+                }
+
+                for (int l = 0; l < this.getOrCreatePureSnowGolemFull().getHeight(); ++l) {
+                    BlockInWorld blockInWorld = purePowderedSnowGolemPattern.getBlock(0, l, 0);
+                    level.blockUpdated(blockInWorld.getPos(), Blocks.AIR);
+                }
+            }
+        } else if (event.getPlacedBlock().getBlock() instanceof CarvedPumpkinBlock && Config.canMakeSnowGolemFromPowderedSnow()) {
+            if (powderedSnowGolemPattern != null) {
+                for (int i = 0; i < this.getOrCreatePowderedSnowGolemFull().getHeight(); ++i) {
+                    BlockInWorld blockinworld = powderedSnowGolemPattern.getBlock(0, i, 0);
+                    level.setBlock(blockinworld.getPos(), Blocks.AIR.defaultBlockState(), 2);
+                    level.levelEvent(2001, blockinworld.getPos(), Block.getId(blockinworld.getState()));
+                }
+
+                BlockPos patternPos = powderedSnowGolemPattern.getBlock(0, 2, 0).getPos();
+                snowGolem.moveTo((double) patternPos.getX() + 0.5D, (double) patternPos.getY() + 0.05D, (double) patternPos.getZ() + 0.5D, 0.0F, 0.0F);
+                level.addFreshEntity(snowGolem);
+
+                for (ServerPlayer serverPlayer : level.getEntitiesOfClass(ServerPlayer.class, snowGolem.getBoundingBox().inflate(5.0D))) {
+                    CriteriaTriggers.SUMMONED_ENTITY.trigger(serverPlayer, snowGolem);
+                }
+
+                for (int l = 0; l < this.getOrCreatePowderedSnowGolemFull().getHeight(); ++l) {
+                    BlockInWorld blockInWorld = powderedSnowGolemPattern.getBlock(0, l, 0);
                     level.blockUpdated(blockInWorld.getPos(), Blocks.AIR);
                 }
             }
         }
     }
 
-    private BlockPattern getOrCreatePureSnowGolem() {
-        if (this.pureSnowGolemBase == null) {
-            this.pureSnowGolemBase = BlockPatternBuilder.start().aisle("#", "#", "#").where('#', BlockInWorld.hasState(BlockStatePredicate.forBlock(Blocks.SNOW_BLOCK))).build();
+    private BlockPattern getOrCreatePureSnowGolemFull() {
+        if (this.pureSnowGolemFull == null) {
+            this.pureSnowGolemFull = BlockPatternBuilder.start().aisle("#", "#", "#").where('#', BlockInWorld.hasState(BlockStatePredicate.forBlock(Blocks.SNOW_BLOCK))).build();
         }
-        return this.pureSnowGolemBase;
+        return this.pureSnowGolemFull;
+    }
+
+    private BlockPattern getOrCreatePurePowderedSnowGolemFull() {
+        if (this.purePowderedSnowGolemFull == null) {
+            this.purePowderedSnowGolemFull = BlockPatternBuilder.start().aisle("#", "#", "#").where('#', BlockInWorld.hasState(BlockStatePredicate.forBlock(Blocks.POWDER_SNOW))).build();
+        }
+        return this.purePowderedSnowGolemFull;
+    }
+
+    private BlockPattern getOrCreatePowderedSnowGolemFull() {
+        if (this.powderedSnowGolemFull == null) {
+            this.powderedSnowGolemFull = BlockPatternBuilder.start().aisle("^", "#", "#").where('^', BlockInWorld.hasState(PUMPKINS_PREDICATE)).where('#', BlockInWorld.hasState(BlockStatePredicate.forBlock(Blocks.POWDER_SNOW))).build();
+        }
+        return this.powderedSnowGolemFull;
     }
 }
