@@ -54,7 +54,7 @@ public class ActuallySnowmen
     public void onPlayerRightClickSnowGolem(PlayerInteractEvent.EntityInteract event) {
         if (Configuration.canAddPumpkinToSnowGolem()) {
             if (event.getTarget() instanceof SnowGolem) {
-                if (event.getPlayer().getMainHandItem().getItem() == Items.CARVED_PUMPKIN) {
+                if (event.getPlayer().getMainHandItem().getItem() == Items.CARVED_PUMPKIN || event.getPlayer().getMainHandItem().getItem() == Items.JACK_O_LANTERN) {
                     if (!((SnowGolem) event.getTarget()).hasPumpkin()) {
                         if (!event.getPlayer().isCreative()) {
                             event.getPlayer().getMainHandItem().setCount(event.getEntityLiving().getMainHandItem().getCount() - 1);
