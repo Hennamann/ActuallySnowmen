@@ -14,6 +14,7 @@ public class Config {
     public final BooleanValue shouldSnowGolemWithoutPumpkinBeSnowman;
     public final BooleanValue canMakeSnowGolemFromPowderedSnow;
     public final BooleanValue shouldSnowGolemWithPumpkinEmitLight;
+    public final BooleanValue shouldSnowGolemsLeaveSnowBehind;
 
     public final IntValue snowGolemLightLevel;
 
@@ -47,6 +48,10 @@ public class Config {
                 .comment("True if Snow Golems with pumpkins should emit light, otherwise false")
                 .translation("config.actuallysnowmen.shouldSnowGolemWithPumpkinEmitLight")
                 .define("shouldSnowGolemWithPumpkinEmitLight", true);
+        shouldSnowGolemsLeaveSnowBehind = builder
+                .comment("True if Snow Golems should not leave snow behind while walking, otherwise false")
+                .translation("config.actuallysnowmen.shouldSnowGolemsLeaveSnowBehind")
+                .define("shouldSnowGolemsLeaveSnowBehind", false);
         snowGolemLightLevel = builder
                 .comment("Sets the light level emitted from Snow Golems, where 1 is minimum/weakest and 15 is maximum")
                 .translation("config.actuallysnowmen.snowGolemLightLevel")
@@ -71,6 +76,10 @@ public class Config {
 
     public static boolean shouldSnowGolemWithPumpkinEmitLight() {
         return CONFIG.shouldSnowGolemWithPumpkinEmitLight.get();
+    }
+
+    public static boolean shouldSnowGolemsLeaveSnowBehind() {
+        return CONFIG.shouldSnowGolemsLeaveSnowBehind.get();
     }
 
     public static int snowGolemLightLevel() {

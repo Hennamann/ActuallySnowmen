@@ -24,10 +24,12 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Material;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.entity.EntityMobGriefingEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -68,6 +70,15 @@ public class ActuallySnowmen
         PUMPKIN_LIGHT_BLOCK_ENTITYTYPE = BlockEntityType.Builder.of(PumpkinLightBlockEntity::new, PUMPKIN_LIGHT_BLOCK).build(null);
         PUMPKIN_LIGHT_BLOCK_ENTITYTYPE.setRegistryName(MODID, "pumpkin_light");
         event.getRegistry().register(PUMPKIN_LIGHT_BLOCK_ENTITYTYPE);
+    }
+
+    @SubscribeEvent
+    public void onSnowGolemPlaceSnow(EntityMobGriefingEvent event) {
+        if (Config.shouldSnowGolemsLeaveSnowBehind()) {
+            if (event.getEntity() instanceof SnowGolem) {
+                event.setResult(Event.Result.DENY);
+            }
+        }
     }
 
     @SubscribeEvent
