@@ -1,0 +1,9 @@
+{
+  "block.actuallysnowmen.pumpkin_light": "Pumpkin Light",
+  "config.actuallysnowmen.shouldSnowGolemsDropPumpkin": "Snow Golems drop pumpkins.",
+  "config.actuallysnowmen.canAddPumpkinToSnowGolem": "Equip Snow Golems with pumpkins.",
+  "config.actuallysnowmen.shouldSnowGolemWithoutPumpkinBeSnowman": "\"Naked\" Snow Golems are \"Snowmen\".",
+  "config.actuallysnowmen.canMakeSnowGolemFromPowderedSnow": "Snow Golems from powdered snow.",
+  "config.actuallysnowmen.shouldSnowGolemWithPumpkinEmitLight": "Snow Golems emit light.",
+  "config.actuallysnowmen.snowGolemLightLevel": "Snow Golem light level."
+}
