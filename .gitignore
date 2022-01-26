@@ -12,6 +12,7 @@ out
 *.iws
 *.iml
 .idea
+classes
 
 # gradle
 build
@@ -20,6 +21,4 @@ build
 # other
 eclipse
 run
-
-# Files from Forge MDK
-forge*changelog.txt
+.DS_Store

@@ -15,7 +15,9 @@ apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
 ext.configFile = file('build.properties')
+ext.localFile = file('local.properties')
 ext.config = parseConfig(configFile)
+ext.local = parseConfig(localFile)
 
 version = "${config.version}"
 group = 'com.henrikstabell.actuallysnowmen' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
@@ -154,6 +156,7 @@ def parseConfig(File config) {
 
 // Example for how to get properties into the manifest for reading at runtime.
 jar {
+    archiveClassifier.set("universal")
     manifest {
         attributes([
                 "Specification-Title"     : "actuallysnowmen",
@@ -167,21 +170,52 @@ jar {
     }
 }
 
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    archiveClassifier.set("sources")
+}
+
+task deobfJar(type: Jar) {
+    from sourceSets.main.output
+    archiveClassifier.set("dev")
+}
+
+task exportJavadoc(type: Javadoc) {
+    source = sourceSets.main.allSource
+}
+
+task copyBuildXml(type: Copy) {
+    from 'build.properties'
+    into 'output'
+}
+
 // Example configuration to allow publishing using the maven-publish plugin
 // This is the preferred method to reobfuscate your jar file
-jar.finalizedBy('reobfJar')
+//jar.finalizedBy('reobfJar')
 // However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
-// publish.dependsOn('reobfJar')
+publish.dependsOn('reobfJar')
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            groupId 'com.henrikstabell.actuallysnowmen'
+            artifactId 'ActuallySnowmen-1.18.1'
+
             artifact jar
+            artifact deobfJar
+            artifact sourcesJar
         }
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/mcmodsrepo"
+            credentials {
+                username = "${local.userMaven}"
+                password = "${local.passMaven}"
+            }
+            url "https://maven.henrikstabell.com/mods"
+            authentication {
+                basic(BasicAuthentication)
+            }
         }
     }
 }
